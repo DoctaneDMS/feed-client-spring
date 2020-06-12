@@ -1,4 +1,4 @@
-package com.softwareplumbers.feeds.rest.client.spring;
+package com.softwareplumbers.feed.rest.client.spring;
 
 import org.springframework.http.HttpHeaders;
 

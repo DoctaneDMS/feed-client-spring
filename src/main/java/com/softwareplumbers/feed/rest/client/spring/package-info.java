@@ -37,4 +37,4 @@
  * 
  * 
  */
-package com.softwareplumbers.dms.rest.client.spring;
+package com.softwareplumbers.feed.rest.client.spring;

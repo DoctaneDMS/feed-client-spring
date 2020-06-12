@@ -1,4 +1,4 @@
-package com.softwareplumbers.feeds.rest.client.spring;
+package com.softwareplumbers.feed.rest.client.spring;
 
 /** Enumerate the public/private key pairs used by this package */
 public enum KeyPairs {
