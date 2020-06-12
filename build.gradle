@@ -1,0 +1,121 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+}
+
+plugins {
+  id "org.jdrupes.mdoclet" version "1.0.5"
+}
+
+String propValue(String propName, String defValue) {
+    (project.hasProperty(propName) && project.getProperty(propName)) ? project.getProperty(propName) : defValue
+}
+
+version = propValue("ci_version","master");
+group = "com.softwareplumbers.oss"
+
+def SNAPSHOT_BUILDS = ["master"];
+
+if (SNAPSHOT_BUILDS.contains(version)) { version = version + "-SNAPSHOT" };
+
+apply plugin: 'java'
+apply plugin: 'maven'
+
+repositories {
+	maven { url propValue("proxyMavenCentral", "https://repo.maven.apache.org/maven2/") }
+    maven { url 'https://nexus.softwareplumbers.com/repository/maven-oss' }
+    maven { url 'https://nexus.softwareplumbers.com/repository/maven-oss-snapshot' }
+}
+
+uploadArchives {
+  repositories {
+    mavenDeployer {
+      repository(url: "https://nexus.softwareplumbers.com/repository/maven-oss") {
+      	authentication(userName: propValue("mavenUploadUser",""), password: propValue("mavenUploadPassword",""))
+      }
+      snapshotRepository(url: "https://nexus.softwareplumbers.com/repository/maven-oss-snapshot") {
+      	authentication(userName: propValue("mavenUploadUser",""), password: propValue("mavenUploadPassword",""))
+      }
+    }
+  }
+}
+
+configurations {
+    gatherJavadoc
+}
+
+
+dependencies {
+    compile group: 'com.softwareplumbers.oss', name:'feed-interface-core', version: 'master-SNAPSHOT'
+    compile group: 'com.softwareplumbers.oss', name:'key-manager', version: '0.0.11'
+    compile group: 'org.springframework', name: 'spring-web', version: '4.3.8.RELEASE'
+    compile group: 'org.slf4j', name: 'slf4j-ext', version: '1.7.30'
+    testCompile group: 'com.softwareplumbers.oss', name: 'feed-interface-core', version: 'master-SNAPSHOT', classifier: 'tests'
+    testCompile group: 'org.hamcrest', name: 'hamcrest-library', version: '1.3'
+    testImplementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.3'
+    testImplementation 'org.springframework:spring-test:4.3.8.RELEASE'
+    runtime group: 'org.glassfish', name: 'javax.json', version: '1.0.4'
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+    gatherJavadoc group: 'com.softwareplumbers.oss', name:'immutable-list', version:'0.0.5', classifier:'sources'
+    gatherJavadoc group: 'com.softwareplumbers.oss', name:'key-manager', version:'0.0.11', classifier:'sources'
+    gatherJavadoc group: 'com.softwareplumbers.oss', name:'feed-interface-core', version:'master-SNAPSHOT', classifier:'sources'
+    gatherJavadoc group: 'com.softwareplumbers.oss', name:'pipedstream', version:'0.0.2', classifier:'sources'
+}
+
+sourceSets {
+    javadocSource {
+        java {
+            srcDir "${buildDir}/javadocSources"
+            compileClasspath += main.compileClasspath 
+        }
+    }
+}
+
+task unzipSources(type: Copy) {
+  configurations.gatherJavadoc.files.each {
+    if (it.name.matches(".*-sources.jar")) {
+      from zipTree(it)
+      into "build/javadocSources"
+    }
+  }
+}
+
+
+javadoc {
+    dependsOn unzipSources
+    source = sourceSets.javadocSource.allJava + sourceSets.main.allJava
+    destinationDir = file("${buildDir}/docs/javadoc")
+    classpath = configurations.runtime
+}
+
+test {
+    systemProperty "doctane.keystore.password", propValue("keystorePassword", "changeme")
+    systemProperty "spring.profiles.active", propValue("testProfile", "test")
+ 
+    testLogging {
+        events "passed", "skipped", "failed"
+    }
+}
+
+task javadocJar(type: Jar) {
+    from javadoc
+    classifier = 'javadoc'
+}
+
+task sourcesJar(type: Jar, dependsOn: classes) {
+	classifier 'sources'
+	from sourceSets.main.allSource
+}
+
+
+artifacts {
+    archives sourcesJar 
+    archives javadocJar
+}
+
+
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+

@@ -1,0 +1,10 @@
+/.gradle/
+/.vscode/
+/build
+.classpath
+.project
+.settings
+.DS_Store
+/bin/
+*.class
+gradle.properties
