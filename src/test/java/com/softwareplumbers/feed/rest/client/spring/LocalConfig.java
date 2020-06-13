@@ -46,7 +46,7 @@ public class LocalConfig {
     }
     
     @Bean
-    FeedService feedservice(LoginHandler loginHandler) {
+    FeedService testService(LoginHandler loginHandler) {
         return new FeedServiceImpl(
             "http://localhost:8080/feed/tmp/",
             loginHandler
