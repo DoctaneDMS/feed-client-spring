@@ -48,7 +48,7 @@ configurations {
 
 dependencies {
     compile group: 'com.softwareplumbers.oss', name:'feed-interface-core', version: '0.0.7'
-    compile group: 'com.softwareplumbers.oss', name:'key-manager', version: '0.0.11'
+    compile group: 'com.softwareplumbers.oss', name:'key-manager', version: '0.0.12'
     compile group: 'org.springframework', name: 'spring-web', version: '4.3.8.RELEASE'
     compile group: 'org.slf4j', name: 'slf4j-ext', version: '1.7.30'
     testCompile group: 'com.softwareplumbers.oss', name: 'feed-interface-core', version: '0.0.7', classifier: 'tests'
@@ -58,7 +58,7 @@ dependencies {
     runtime group: 'org.glassfish', name: 'javax.json', version: '1.1.2'
     testCompile group: 'junit', name: 'junit', version: '4.12'
     gatherJavadoc group: 'com.softwareplumbers.oss', name:'immutable-list', version:'0.0.5', classifier:'sources'
-    gatherJavadoc group: 'com.softwareplumbers.oss', name:'key-manager', version:'0.0.11', classifier:'sources'
+    gatherJavadoc group: 'com.softwareplumbers.oss', name:'key-manager', version:'0.0.12', classifier:'sources'
     gatherJavadoc group: 'com.softwareplumbers.oss', name:'feed-interface-core', version:'0.0.7', classifier:'sources'
     gatherJavadoc group: 'com.softwareplumbers.oss', name:'pipedstream', version:'0.0.2', classifier:'sources'
 }
