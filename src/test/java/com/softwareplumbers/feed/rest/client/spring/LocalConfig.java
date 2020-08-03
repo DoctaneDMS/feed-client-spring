@@ -7,6 +7,7 @@ import com.softwareplumbers.feed.rest.client.spring.LoginHandler;
 import com.softwareplumbers.feed.rest.client.spring.FeedServiceImpl;
 import com.softwareplumbers.feed.FeedService;
 import com.softwareplumbers.keymanager.KeyManager;
+import java.io.IOException;
 import java.security.KeyStoreException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -28,9 +29,10 @@ public class LocalConfig {
 	Environment env;    
     
     @Bean
-    public KeyManager keyManager() throws KeyStoreException { 
+    public KeyManager keyManager() throws KeyStoreException, IOException { 
         KeyManager<SecretKeys, KeyPairs> keyManager = new KeyManager<>();
-        keyManager.setLocation("/var/tmp/doctane-proxy.keystore");
+        keyManager.setLocation(env.getProperty("local.keystore"));
+        keyManager.setPublishLocation(env.getProperty("local.certs.dir"));
         keyManager.setPassword(env.getProperty("doctane.keystore.password"));
         keyManager.setRequiredSecretKeys(SecretKeys.class);
         keyManager.setRequiredKeyPairs(KeyPairs.class);
@@ -40,15 +42,15 @@ public class LocalConfig {
     @Bean LoginHandler loginHandler(KeyManager keyManager) throws KeyStoreException {
         SignedRequestLoginHandler handler = new SignedRequestLoginHandler();
         handler.setKeyManager(keyManager);
-        handler.setAuthURI("http://localhost:8080/auth/tmp/service?request={request}&signature={signature}");
-        handler.setRepository("tmp");
+        handler.setAuthURI("http://localhost:8080/auth/test/service?request={request}&signature={signature}");
+        handler.setRepository("test");
         return handler;
     }
     
     @Bean
     FeedService testService(LoginHandler loginHandler) {
         return new FeedServiceImpl(
-            "http://localhost:8080/feed/tmp/",
+            "http://localhost:8080/feed/test/",
             loginHandler
         );
     }    

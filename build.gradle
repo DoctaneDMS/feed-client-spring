@@ -5,7 +5,7 @@ buildscript {
 }
 
 plugins {
-  id "org.jdrupes.mdoclet" version "1.0.5"
+  id "org.jdrupes.mdoclet" version "1.0.10"
 }
 
 String propValue(String propName, String defValue) {
@@ -48,7 +48,7 @@ configurations {
 
 dependencies {
     compile group: 'com.softwareplumbers.oss', name:'feed-interface-core', version: '0.0.7'
-    compile group: 'com.softwareplumbers.oss', name:'key-manager', version: '0.0.12'
+    compile group: 'com.softwareplumbers.oss', name:'key-manager', version: '0.0.18'
     compile group: 'org.springframework', name: 'spring-web', version: '4.3.8.RELEASE'
     compile group: 'org.slf4j', name: 'slf4j-ext', version: '1.7.30'
     testCompile group: 'com.softwareplumbers.oss', name: 'feed-interface-core', version: '0.0.7', classifier: 'tests'
@@ -92,7 +92,8 @@ javadoc {
 test {
     systemProperty "doctane.keystore.password", propValue("keystorePassword", "changeme")
     systemProperty "spring.profiles.active", propValue("testProfile", "test")
- 
+    systemProperty "local.certs.dir", propValue("localCertsDir", "/var/tmp/doctane/certs")
+    systemProperty "local.keystore", propValue("localKeystore", "/var/tmp/doctane/doctane.keystore")  
     testLogging {
         events "passed", "skipped", "failed"
     }
