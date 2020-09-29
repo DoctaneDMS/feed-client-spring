@@ -47,11 +47,11 @@ configurations {
 
 
 dependencies {
-    compile group: 'com.softwareplumbers.oss', name:'feed-interface-core', version: 'master-SNAPSHOT'
+    compile group: 'com.softwareplumbers.oss', name:'feed-interface-core', version: '0.0.23'
     compile group: 'com.softwareplumbers.oss', name:'key-manager', version: '0.0.23'
     compile group: 'org.springframework', name: 'spring-web', version: '4.3.8.RELEASE'
     compile group: 'org.slf4j', name: 'slf4j-ext', version: '1.7.30'
-    testCompile group: 'com.softwareplumbers.oss', name: 'feed-interface-core', version: 'master-SNAPSHOT', classifier: 'tests'
+    testCompile group: 'com.softwareplumbers.oss', name: 'feed-interface-core', version: '0.0.23', classifier: 'tests'
     testCompile group: 'org.hamcrest', name: 'hamcrest-library', version: '1.3'
     testImplementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.3'
     testImplementation 'org.springframework:spring-test:4.3.8.RELEASE'
@@ -59,7 +59,7 @@ dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.12'
     gatherJavadoc group: 'com.softwareplumbers.oss', name:'immutable-list', version:'0.0.5', classifier:'sources'
     gatherJavadoc group: 'com.softwareplumbers.oss', name:'key-manager', version:'0.0.12', classifier:'sources'
-    gatherJavadoc group: 'com.softwareplumbers.oss', name:'feed-interface-core', version:'master-SNAPSHOT', classifier:'sources'
+    gatherJavadoc group: 'com.softwareplumbers.oss', name:'feed-interface-core', version:'0.0.23', classifier:'sources'
     gatherJavadoc group: 'com.softwareplumbers.oss', name:'pipedstream', version:'0.0.2', classifier:'sources'
 }
 
@@ -98,14 +98,17 @@ def defaultEnvironment = [
 
 test {
     environment = defaultEnvironment  
-    systemProperty "test.TestCluster.testMessageRoundtripBidirectional.SEND_COUNT", 500
-    systemProperty "test.TestCluster.testMessageRoundtripMonodirectional.SEND_COUNT", 500
-    systemProperty "test.TestCluster.testMessageRoundtripSingleThread.SEND_COUNT", 500
-    systemProperty "test.TestFeedService.testMessageRoundtripSingleThread.SEND_COUNT", 500
-    systemProperty "test.TestFeedService.testMessageRoundtripMultipleThreads.SEND_COUNT", 80
+    systemProperty "test.TestCluster.testMessageRoundtripBidirectional.SEND_COUNT", 50
+    systemProperty "test.TestCluster.testMessageRoundtripMonodirectional.SEND_COUNT", 50
+    systemProperty "test.TestCluster.testMessageRoundtripSingleThread.SEND_COUNT", 50
+    systemProperty "test.TestFeedService.testMessageRoundtripSingleThread.SEND_COUNT", 50
+    systemProperty "test.TestFeedService.testMessageRoundtripMultipleThreads.SEND_COUNT", 20
     systemProperty "test.TestCluster.TIMEOUT", 30
-    systemProperty "test.TestFeedService.TIMEOUT", 30    testLogging {
-        events "passed", "skipped", "failed"        
+    systemProperty "test.TestFeedService.TIMEOUT", 30    
+    testLogging {
+        events "passed", "skipped", "failed"   
+        outputs.upToDateWhen {false}
+        showStandardStreams = true          
     }
 }
 

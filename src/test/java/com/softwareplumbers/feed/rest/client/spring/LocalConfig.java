@@ -31,10 +31,11 @@ public class LocalConfig {
     @Bean
     public KeyManager keyManager() throws KeyStoreException, IOException { 
         KeyManager<SecretKeys, KeyPairs> keyManager = new KeyManager<>();
-        String root = env.getProperty("installation.root");
-        keyManager.setLocationParts(new String[] { root, "doctane.keystore"});
-        keyManager.setPublishLocationParts(new String[] { root, "certs" });
-        keyManager.setPassword(env.getProperty("doctane.keystore.password"));
+        String root = System.getenv("DOCTANE_INSTALLATION_ROOT");
+        keyManager.setLocationParts(new String[] { root, "pkix", "doctane.keystore"});
+        keyManager.setPublishLocationParts(new String[] { root, "pkix", "certs" });
+        keyManager.setPassword(System.getenv("DOCTANE_KEYSTORE_PASSWORD"));
+
         keyManager.setRequiredSecretKeys(SecretKeys.class);
         keyManager.setRequiredKeyPairs(KeyPairs.class);
         return keyManager;
@@ -52,6 +53,7 @@ public class LocalConfig {
     FeedService testService(LoginHandler loginHandler) {
         return new FeedServiceImpl(
             "http://localhost:8080/feed/test/",
+            "http://localhost:8080/service/test/",
             loginHandler
         );
     }    

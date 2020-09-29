@@ -65,6 +65,7 @@ public class FeedServiceImpl implements FeedService {
     private static final XLogger LOG = XLoggerFactory.getXLogger(FeedServiceImpl.class);
  
     private String feedsUrl;
+    private String serviceUrl;
     private LoginHandler loginHandler;
     private final MessageFactory factory = new MessageFactory();
     
@@ -82,8 +83,7 @@ public class FeedServiceImpl implements FeedService {
     
     private ServiceInfo getServiceInfo() {
         if (serviceInfo == null) {
-            UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(feedsUrl);
-            builder.path("feeds");  
+            UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(serviceUrl);
             try {
                 serviceInfo = new ServiceInfo(getJson(builder.build().toUri()));
             } catch(IOException ioe) {
@@ -129,8 +129,9 @@ public class FeedServiceImpl implements FeedService {
      * @param docsUrl
      * @param loginHandler 
      */
-    public FeedServiceImpl(String feedsUrl, LoginHandler loginHandler) {
+    public FeedServiceImpl(String feedsUrl, String serviceUrl, LoginHandler loginHandler) {
         this.feedsUrl = feedsUrl;
+        this.serviceUrl = serviceUrl;
         this.loginHandler = loginHandler;
     }
     
@@ -139,7 +140,7 @@ public class FeedServiceImpl implements FeedService {
      * The FeedsAPIURL and LoginHandler properties must be set before using the service.
      */
     public FeedServiceImpl() {
-        this(null, null);
+        this(null, null, null);
     }
     
     
@@ -175,9 +176,11 @@ public class FeedServiceImpl implements FeedService {
         headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
         loginHandler.applyCredentials(headers);
 
+        HttpEntity requestEntity = new HttpEntity(headers);
+
         RestTemplate restTemplate = new RestTemplate();
 
-        ResponseEntity<String> response = restTemplate.getForEntity(uri, String.class);
+        ResponseEntity<String> response = restTemplate.exchange(uri, HttpMethod.GET, requestEntity, String.class);
 
         return LOG.exit(Json.createReader(new StringReader(response.getBody())).readObject());
     }
@@ -307,7 +310,7 @@ public class FeedServiceImpl implements FeedService {
     public CompletableFuture<MessageIterator> listen(FeedPath path, Instant from, UUID serverId, long timeoutMillis, Predicate<Message>... filters) throws FeedExceptions.InvalidPath {
         LOG.entry(path, from);
         UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(feedsUrl);
-        builder.path("feeds/{path}");
+        builder.path("{path}");
         builder.queryParam("from", from);
         builder.queryParam("wait", timeoutMillis);
         builder.queryParam("filters", encode(Filters.toJson(filters)));
@@ -318,7 +321,7 @@ public class FeedServiceImpl implements FeedService {
     public MessageIterator search(FeedPath path, UUID serverId, Instant from, boolean fromInclusive, Optional<Instant> to, Optional<Boolean> toInclusive, Optional<Boolean> relay, Predicate<Message>... filters) throws FeedExceptions.InvalidPath {
         LOG.entry(path, from);
         UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(feedsUrl);
-        builder.path("feeds/{path}");
+        builder.path("{path}");
         builder.queryParam("from", from);
         if (fromInclusive) builder.queryParam("fromInclusive", true);
         if (to.isPresent()) builder.queryParam("to", to.get());
@@ -331,19 +334,14 @@ public class FeedServiceImpl implements FeedService {
     private Message fromJson(JsonObject object) throws ServerError {
         FeedPath name = Message.getName(object)
             .orElseThrow(()->new ServerError("No name in message returned from server"));
-        String id = name.part.getId()
-            .orElseThrow(()->new ServerError("No id in message returned from server"));
         return LOG.exit(new MessageImpl(
             Message.getType(object),
-            id,
             name,
             Message.getSender(object).orElse(null),
             Message.getTimestamp(object).orElse(Instant.now()),
             Message.getServerId(object),
             Message.getRemoteInfo(object),
-            Message.getHeaders(object),
-            Message.getLength(object),
-            null                 
+            Message.getHeaders(object)
         ));
     }
     
@@ -374,7 +372,6 @@ public class FeedServiceImpl implements FeedService {
         LOG.entry(watcherServerId, after);
         final String WATCH_FILTER = encode(Filters.toJson(new Predicate[] { Filters.POSTED_LOCALLY }));
         UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(feedsUrl);
-        builder.path("feeds");
         builder.queryParam("from", after);
         builder.queryParam("wait", timeoutMillis);
         builder.queryParam("filters", WATCH_FILTER);
@@ -395,7 +392,7 @@ public class FeedServiceImpl implements FeedService {
     public MessageIterator search(FeedPath messageId, Predicate<Message>... filters) throws FeedExceptions.InvalidPath, FeedExceptions.InvalidId {
         LOG.entry(messageId, filters);
         UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(feedsUrl);
-        builder.path("feeds/{path}");
+        builder.path("{path}");
         if (filters.length > 0) builder.queryParam("filters", encode(Filters.toJson(filters)));
         return LOG.exit(getMessages(builder.buildAndExpand(messageId.toString()).toUri(), Filters.local(filters)));
     }
@@ -406,7 +403,7 @@ public class FeedServiceImpl implements FeedService {
         try {
             UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(feedsUrl);
             builder.path("{path}");
-            JsonObject result = sendStream(builder.buildAndExpand(message.getFeedName().toString()).toUri(), HttpMethod.PUT, message.toStream());
+            JsonObject result = sendStream(builder.buildAndExpand(message.getName().toString()).toUri(), HttpMethod.PUT, message.toStream());
             return LOG.exit(fromJson(result));
         } catch (HttpStatusCodeException e) {
             switch (e.getStatusCode()) {
@@ -433,9 +430,9 @@ public class FeedServiceImpl implements FeedService {
     @Override
     public Feed getFeed(FeedPath path) throws FeedExceptions.InvalidPath {
         UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(feedsUrl);
-        builder.path("feeds");  
+        builder.path("{path}");  
         try {
-            return LOG.exit(FeedImpl.fromJson(getJson(builder.build().toUri())));
+            return LOG.exit(FeedImpl.fromJson(getJson(builder.buildAndExpand(path.toString()).toUri())));
         } catch(IOException ioe) {
             throw FeedExceptions.runtime(ioe);
         }
@@ -444,9 +441,9 @@ public class FeedServiceImpl implements FeedService {
     @Override
     public Stream<Feed> getChildren(FeedPath path) throws FeedExceptions.InvalidPath {
         UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(feedsUrl);
-        builder.path("feeds");  
+        builder.path("{path}");  
         try {
-            JsonObject feed = getJson(builder.build().toUri());
+            JsonObject feed = getJson(builder.buildAndExpand(path.toString()).toUri());
             return LOG.exit(Feed.getChildren(feed, FeedImpl::fromJson));
         } catch(IOException ioe) {
             throw FeedExceptions.runtime(ioe);
