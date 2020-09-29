@@ -31,8 +31,9 @@ public class LocalConfig {
     @Bean
     public KeyManager keyManager() throws KeyStoreException, IOException { 
         KeyManager<SecretKeys, KeyPairs> keyManager = new KeyManager<>();
-        keyManager.setLocation(env.getProperty("local.keystore"));
-        keyManager.setPublishLocation(env.getProperty("local.certs.dir"));
+        String root = env.getProperty("installation.root");
+        keyManager.setLocationParts(new String[] { root, "doctane.keystore"});
+        keyManager.setPublishLocationParts(new String[] { root, "certs" });
         keyManager.setPassword(env.getProperty("doctane.keystore.password"));
         keyManager.setRequiredSecretKeys(SecretKeys.class);
         keyManager.setRequiredKeyPairs(KeyPairs.class);

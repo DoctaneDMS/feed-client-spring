@@ -48,7 +48,7 @@ configurations {
 
 dependencies {
     compile group: 'com.softwareplumbers.oss', name:'feed-interface-core', version: 'master-SNAPSHOT'
-    compile group: 'com.softwareplumbers.oss', name:'key-manager', version: '0.0.18'
+    compile group: 'com.softwareplumbers.oss', name:'key-manager', version: '0.0.23'
     compile group: 'org.springframework', name: 'spring-web', version: '4.3.8.RELEASE'
     compile group: 'org.slf4j', name: 'slf4j-ext', version: '1.7.30'
     testCompile group: 'com.softwareplumbers.oss', name: 'feed-interface-core', version: 'master-SNAPSHOT', classifier: 'tests'
@@ -89,13 +89,23 @@ javadoc {
     classpath = configurations.runtime
 }
 
+def defaultEnvironment = [
+    'DOCTANE_KEYSTORE_PASSWORD': propValue("keystorePassword", "changeme"),
+    'DOCTANE_INSTALLATION_ROOT': propValue("installRoot", "/var/tmp/doctane"),
+    'SPRING_PROFILES_ACTIVE': propValue("springProfile", "test")
+]
+
+
 test {
-    systemProperty "doctane.keystore.password", propValue("keystorePassword", "changeme")
-    systemProperty "spring.profiles.active", propValue("testProfile", "test")
-    systemProperty "local.certs.dir", propValue("localCertsDir", "/var/tmp/doctane/certs")
-    systemProperty "local.keystore", propValue("localKeystore", "/var/tmp/doctane/doctane.keystore")  
-    testLogging {
-        events "passed", "skipped", "failed"
+    environment = defaultEnvironment  
+    systemProperty "test.TestCluster.testMessageRoundtripBidirectional.SEND_COUNT", 500
+    systemProperty "test.TestCluster.testMessageRoundtripMonodirectional.SEND_COUNT", 500
+    systemProperty "test.TestCluster.testMessageRoundtripSingleThread.SEND_COUNT", 500
+    systemProperty "test.TestFeedService.testMessageRoundtripSingleThread.SEND_COUNT", 500
+    systemProperty "test.TestFeedService.testMessageRoundtripMultipleThreads.SEND_COUNT", 80
+    systemProperty "test.TestCluster.TIMEOUT", 30
+    systemProperty "test.TestFeedService.TIMEOUT", 30    testLogging {
+        events "passed", "skipped", "failed"        
     }
 }
 
