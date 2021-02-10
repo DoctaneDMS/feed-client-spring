@@ -66,6 +66,7 @@ public class FeedServiceImpl implements FeedService {
  
     private String feedsUrl;
     private String serviceUrl;
+    private char pathEscapeChar = '$';
     private LoginHandler loginHandler;
     private final MessageFactory factory = new MessageFactory();
     
@@ -122,6 +123,10 @@ public class FeedServiceImpl implements FeedService {
      */
     public void setLoginHandler(LoginHandler loginHandler) {
         this.loginHandler = loginHandler;
+    }
+    
+    public void setPathEscapeChar(char pathEscapeChar) {
+        this.pathEscapeChar = pathEscapeChar;
     }
     
     /** Construct a service using URL and login handler.
@@ -314,7 +319,8 @@ public class FeedServiceImpl implements FeedService {
         builder.queryParam("from", from);
         builder.queryParam("wait", timeoutMillis);
         builder.queryParam("filters", encode(Filters.toJson(filters)));
-        return LOG.exit(getMessagesAsync(builder.buildAndExpand(path.toString()).toUri(), Filters.local(filters)));
+        builder.queryParam("escapeWith", pathEscapeChar);
+        return LOG.exit(getMessagesAsync(builder.buildAndExpand(path.toString(pathEscapeChar)).toUri(), Filters.local(filters)));
     }
 
     @Override
@@ -328,7 +334,8 @@ public class FeedServiceImpl implements FeedService {
         if (toInclusive.isPresent()) builder.queryParam("toInclusive", toInclusive.get());
         if (relay.isPresent()) builder.queryParam("relay", relay.get());
         if (filters.length > 0) builder.queryParam("filters", encode(Filters.toJson(filters)));
-        return LOG.exit(getMessages(builder.buildAndExpand(path.toString()).toUri(), Filters.local(filters)));
+        builder.queryParam("escapeWith", pathEscapeChar);
+        return LOG.exit(getMessages(builder.buildAndExpand(path.toString(pathEscapeChar)).toUri(), Filters.local(filters)));
     }
 
     private Message fromJson(JsonObject object) throws ServerError {
@@ -351,7 +358,8 @@ public class FeedServiceImpl implements FeedService {
         try {
             UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(feedsUrl);
             builder.path("{path}");
-            JsonObject result = sendStream(builder.buildAndExpand(path.toString()).toUri(), HttpMethod.POST, message.toStream());
+            builder.queryParam("escapeWith", pathEscapeChar);
+            JsonObject result = sendStream(builder.buildAndExpand(path.toString(pathEscapeChar)).toUri(), HttpMethod.POST, message.toStream());
             return LOG.exit(fromJson(result));
         } catch (HttpStatusCodeException e) {
             switch (e.getStatusCode()) {
@@ -392,9 +400,10 @@ public class FeedServiceImpl implements FeedService {
     public MessageIterator search(FeedPath messageId, Predicate<Message>... filters) throws FeedExceptions.InvalidPath, FeedExceptions.InvalidId {
         LOG.entry(messageId, filters);
         UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(feedsUrl);
+        builder.queryParam("escapeWith", pathEscapeChar);
         builder.path("{path}");
         if (filters.length > 0) builder.queryParam("filters", encode(Filters.toJson(filters)));
-        return LOG.exit(getMessages(builder.buildAndExpand(messageId.toString()).toUri(), Filters.local(filters)));
+        return LOG.exit(getMessages(builder.buildAndExpand(messageId.toString(pathEscapeChar)).toUri(), Filters.local(filters)));
     }
 
     @Override
@@ -403,7 +412,8 @@ public class FeedServiceImpl implements FeedService {
         try {
             UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(feedsUrl);
             builder.path("{path}");
-            JsonObject result = sendStream(builder.buildAndExpand(message.getName().toString()).toUri(), HttpMethod.PUT, message.toStream());
+            builder.queryParam("escapeWith", pathEscapeChar);            
+            JsonObject result = sendStream(builder.buildAndExpand(message.getName().toString(pathEscapeChar)).toUri(), HttpMethod.PUT, message.toStream());
             return LOG.exit(fromJson(result));
         } catch (HttpStatusCodeException e) {
             switch (e.getStatusCode()) {
@@ -431,8 +441,9 @@ public class FeedServiceImpl implements FeedService {
     public Feed getFeed(FeedPath path) throws FeedExceptions.InvalidPath {
         UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(feedsUrl);
         builder.path("{path}");  
+        builder.queryParam("escapeWith", pathEscapeChar);            
         try {
-            return LOG.exit(FeedImpl.fromJson(getJson(builder.buildAndExpand(path.toString()).toUri())));
+            return LOG.exit(FeedImpl.fromJson(getJson(builder.buildAndExpand(path.toString(pathEscapeChar)).toUri())));
         } catch(IOException ioe) {
             throw FeedExceptions.runtime(ioe);
         }
@@ -442,8 +453,9 @@ public class FeedServiceImpl implements FeedService {
     public Stream<Feed> getChildren(FeedPath path) throws FeedExceptions.InvalidPath {
         UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(feedsUrl);
         builder.path("{path}");  
+        builder.queryParam("escapeWith", pathEscapeChar);            
         try {
-            JsonObject feed = getJson(builder.buildAndExpand(path.toString()).toUri());
+            JsonObject feed = getJson(builder.buildAndExpand(path.toString(pathEscapeChar)).toUri());
             return LOG.exit(Feed.getChildren(feed, FeedImpl::fromJson));
         } catch(IOException ioe) {
             throw FeedExceptions.runtime(ioe);
